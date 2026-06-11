@@ -1,0 +1,87 @@
+//! canonical-form
+//! Utilities for transforming data into canonical representations — normalization, sorting, hashing.
+
+use std::collections::BTreeMap;
+
+/// Options controlling canonicalization behavior.
+#[derive(Debug, Clone)]
+pub struct CanonicalOptions {
+    pub sort_keys: bool,
+    pub trim_whitespace: bool,
+    pub lowercase_keys: bool,
+    pub remove_nulls: bool,
+}
+
+impl Default for CanonicalOptions {
+    fn default() -> Self {
+        Self {
+            sort_keys: true,
+            trim_whitespace: true,
+            lowercase_keys: false,
+            remove_nulls: false,
+        }
+    }
+}
+
+/// A canonical form processor for key-value maps.
+pub struct CanonicalForm {
+    options: CanonicalOptions,
+}
+
+impl CanonicalForm {
+    pub fn new(options: CanonicalOptions) -> Self {
+        Self { options }
+    }
+
+    /// Canonicalize a map of string key-value pairs.
+    pub fn canonicalize(&self, input: &mut BTreeMap<String, String>) {
+        if self.options.remove_nulls {
+            input.retain(|_, v| !v.is_empty());
+        }
+        if self.options.trim_whitespace {
+            for v in input.values_mut() {
+                *v = v.trim().to_string();
+            }
+        }
+        if self.options.lowercase_keys {
+            let updated: BTreeMap<String, String> = std::mem::take(input)
+                .into_iter()
+                .map(|(k, v)| (k.to_lowercase(), v))
+                .collect();
+            *input = updated;
+        }
+    }
+
+    /// Produce a deterministic string representation.
+    pub fn to_canonical_string(&self, input: &BTreeMap<String, String>) -> String {
+        let mut pairs: Vec<String> = input
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect();
+        if self.options.sort_keys {
+            pairs.sort();
+        }
+        pairs.join("&")
+    }
+}
+
+impl Default for CanonicalForm {
+    fn default() -> Self {
+        Self::new(CanonicalOptions::default())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic_canonicalization() {
+        let cf = CanonicalForm::default();
+        let mut map = BTreeMap::new();
+        map.insert("Name".into(), "  Alice  ".into());
+        map.insert("Age".into(), "30".into());
+        cf.canonicalize(&mut map);
+        assert_eq!(map.get("Name").unwrap(), "Alice");
+    }
+}
