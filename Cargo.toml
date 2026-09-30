@@ -1,9 +1,11 @@
 [package]
 name = "canonical-form"
 version = "0.1.0"
-description = "A Rust library for Canonical Form"
+description = "Canonical Form — Rust implementation with the SuperInstance polyformalism canary wired in."
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/casey-digennaro/canonical-form"
+repository = "https://github.com/SuperInstance/canonical-form"
 edition = "2021"
+
+keywords = ["canonical-form"]
 
 [dependencies]
